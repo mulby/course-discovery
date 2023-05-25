@@ -1635,8 +1635,6 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
                 set_official_state(entitlement, CourseEntitlement, {'course': official_version})
 
         official_version.set_active_url_slug(self.active_url_slug)
-        if not self.active_url_slug_has_subfolder and self.type.slug != CourseType.BOOTCAMP_2U:
-            raise ValidationError('All slugs must have subfolders')
 
         if creating:
             official_version.canonical_course_run = course_run
@@ -1774,7 +1772,7 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
         if type_slug == CourseType.EXECUTIVE_EDUCATION_2U:
             return self.active_url_slug.startswith('executive-education/')
         elif type_slug == CourseType.BOOTCAMP_2U:
-            return False
+            return self.active_url_slug.startswith('boot-camps/')
         else:
             return self.active_url_slug.startswith('learn/')
 

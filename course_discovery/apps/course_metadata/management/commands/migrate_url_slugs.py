@@ -176,7 +176,11 @@ def get_slug_for_course(course):
     if type_slug == CourseType.EXECUTIVE_EDUCATION_2U:
         return f'executive-education/{current_slug}'
     elif type_slug == CourseType.BOOTCAMP_2U:
-        return None
+        vertical_name = get_category_for_boot_camp(course)
+        if vertical_name is not None:
+            return f'boot-camps/{vertical_name}'
+        else:
+            return None
     else:
         subjects = course.subjects.all()
         if len(subjects) < 1:
@@ -198,3 +202,26 @@ def get_slug_for_course(course):
         end_of_slug = current_slug.split('/')[-1]
 
         return f'learn/{learn_slug_en}/{primary_organization_key}-{end_of_slug}'
+
+
+def get_category_for_boot_camp(course):
+    program_name = course.title.lower()
+    vertical_name = None
+    if 'cyber' in program_name:
+        vertical_name = 'cybersecurity'
+    elif 'coding' in program_name:
+        vertical_name = 'coding'
+    elif 'data' in program_name:
+        vertical_name = 'data-analytics'
+    elif 'digital marketing' in program_name:
+        vertical_name = 'digital-marketing'
+    elif 'fintech' in program_name:
+        vertical_name = 'fintech'
+    elif 'product management' in program_name:
+        vertical_name = 'product-management'
+    elif 'ux/ui' in program_name:
+        vertical_name = 'ux-ui-user-experience'
+    elif 'technology project management' in program_name:
+        vertical_name = 'tech-project-management'
+    
+    return vertical_name
