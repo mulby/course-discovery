@@ -1635,7 +1635,7 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
                 set_official_state(entitlement, CourseEntitlement, {'course': official_version})
 
         official_version.set_active_url_slug(self.active_url_slug)
-        if not self.active_url_slug_has_subfolder:
+        if not self.active_url_slug_has_subfolder and not self.is_external_course:
             raise ValidationError('All slugs must have subfolders')
 
         if creating:
@@ -1772,34 +1772,9 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
     @property
     def active_url_slug_has_subfolder(self):
         if self.is_external_course:
-            return True
+            return False
         else:
             return self.active_url_slug.startswith('learn/')
-    
-    def add_subfolder_to_slug(self, current_slug):
-        if self.is_external_course:
-            return current_slug
-        else:
-            subjects = self.subjects.all()
-            if len(subjects) < 1:
-                logger.warning(f'Course does not have any subjects: {self.key}')
-                return current_slug
-            primary_subject_slug = subjects[0].slug
-            learn_slugs = SUBJECT_SLUG_TO_LEARN_PAGE_MAP.get(primary_subject_slug)
-            if learn_slugs is None:
-                logger.warning(f'Could not find learn slug for subject: {primary_subject_slug}')
-                return current_slug
-            learn_slug_en = learn_slugs['en']
-
-            organizations = self.authoring_organizations.all()
-            if len(organizations) < 1:
-                logger.warning(f'Course does not have any authoring organizations: {self.key}')
-                return current_slug
-            primary_organization_key = organizations[0].key.lower()
-
-            end_of_slug = current_slug.split('/')[-1]
-
-            return f'learn/{learn_slug_en}/{primary_organization_key}-{end_of_slug}'
 
 
 class CourseEditor(TimeStampedModel):

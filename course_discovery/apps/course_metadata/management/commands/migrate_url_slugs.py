@@ -34,9 +34,36 @@ class Command(BaseCommand):
         )
         for course in courses:
             if not course.active_url_slug_has_subfolder:
-                new_slug = course.add_subfolder_to_slug(course.active_url_slug)
-                if new_slug == current_course_slug:
+                new_slug = get_slug_for_course(course)
+                if new_slug is None:
                     continue
                 course.set_active_url_slug(new_slug)
             else:
                 LOG.info(f'Course already migrated: {course.key}')
+
+
+def get_slug_for_course(course):
+    current_slug = course.active_url_slug
+    if course.is_external_course:
+        return None
+    else:
+        subjects = course.subjects.all()
+        if len(subjects) < 1:
+            logger.warning(f'Course does not have any subjects: {course.key}')
+            return None
+        primary_subject_slug = subjects[0].slug
+        learn_slugs = SUBJECT_SLUG_TO_LEARN_PAGE_MAP.get(primary_subject_slug)
+        if learn_slugs is None:
+            logger.warning(f'Could not find learn slug for subject: {primary_subject_slug}')
+            return None
+        learn_slug_en = learn_slugs['en']
+
+        organizations = course.authoring_organizations.all()
+        if len(organizations) < 1:
+            logger.warning(f'Course does not have any authoring organizations: {course.key}')
+            return None
+        primary_organization_key = organizations[0].key.lower()
+
+        end_of_slug = current_slug.split('/')[-1]
+
+        return f'learn/{learn_slug_en}/{primary_organization_key}-{end_of_slug}'
