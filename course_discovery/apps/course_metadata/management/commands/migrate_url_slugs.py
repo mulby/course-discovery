@@ -178,7 +178,7 @@ def get_slug_for_course(course):
     elif type_slug == CourseType.BOOTCAMP_2U:
         vertical_name = get_category_for_boot_camp(course)
         if vertical_name is not None:
-            return f'boot-camps/{vertical_name}'
+            return f'boot-camps/{vertical_name}/{current_slug}'
         else:
             return None
     else:
