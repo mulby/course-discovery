@@ -33,18 +33,10 @@ class Command(BaseCommand):
             'authoring_organizations'
         )
         for course in courses:
-            if not course.is_external_course:
-                self.migrate_open_course(course)
-
-    def migrate_open_course(self, course):
-        current_course_slug = course.active_url_slug
-        if current_course_slug.startswith('learn/'):
-            LOG.warning(f'Course already migrated: {course.key}')
-            return
-
-        new_slug = course.add_subfolder_to_slug(current_course_slug)
-        if new_slug == current_course_slug:
-            return
-
-        with transaction.atomic():
-            course.set_active_url_slug(new_slug)
+            if not course.active_url_slug_has_subfolder:
+                new_slug = course.add_subfolder_to_slug(course.active_url_slug)
+                if new_slug == current_course_slug:
+                    continue
+                course.set_active_url_slug(new_slug)
+            else:
+                LOG.info(f'Course already migrated: {course.key}')
