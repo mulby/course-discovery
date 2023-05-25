@@ -153,7 +153,7 @@ class Command(BaseCommand):
         self.migrate_courses(options['courses'])
 
     def migrate_courses(self, courseUUIDs):
-        courses = Course.objects.filter(uuid__in=courseUUIDs, draft=False).select_related(
+        courses = Course.objects.filter(uuid__in=courseUUIDs).select_related(
             'type'
         ).prefetch_related(
             'url_slug_history',
