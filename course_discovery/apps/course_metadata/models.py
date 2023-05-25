@@ -1,6 +1,7 @@
 import datetime
 import itertools
 import logging
+import re
 from collections import Counter, defaultdict
 from urllib.parse import urljoin
 from uuid import uuid4
@@ -9,6 +10,7 @@ import pytz
 import requests
 import waffle  # lint-amnesty, pylint: disable=invalid-django-waffle-import
 from config_models.models import ConfigurationModel
+from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -42,7 +44,7 @@ from course_discovery.apps.course_metadata.choices import (
     CertificateType, CourseLength, CourseRunPacing, CourseRunStatus, ExternalCourseMarketingType, ExternalProductStatus,
     PayeeType, ProgramStatus, ReportingType
 )
-from course_discovery.apps.course_metadata.constants import PathwayType
+from course_discovery.apps.course_metadata.constants import PathwayType, SUBJECT_SLUG_TO_LEARN_PAGE_MAP
 from course_discovery.apps.course_metadata.fields import HtmlField, NullHtmlField
 from course_discovery.apps.course_metadata.managers import DraftManager
 from course_discovery.apps.course_metadata.model_utils import has_model_changed
@@ -1462,7 +1464,10 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
     def marketing_url(self):
         url = None
         if self.partner.marketing_site_url_root:
-            path = f'course/{self.active_url_slug}'
+            if self.active_url_slug_has_subfolder:
+                path = self.active_url_slug
+            else:
+                path = f'course/{self.active_url_slug}'
             url = urljoin(self.partner.marketing_site_url_root, path)
 
         return url
@@ -1630,6 +1635,8 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
                 set_official_state(entitlement, CourseEntitlement, {'course': official_version})
 
         official_version.set_active_url_slug(self.active_url_slug)
+        if not self.active_url_slug_has_subfolder:
+            raise ValidationError('All slugs must have subfolders')
 
         if creating:
             official_version.canonical_course_run = course_run
@@ -1761,6 +1768,38 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
                 deduped.append(course)
                 seen.add(course)
         return deduped
+
+    @property
+    def active_url_slug_has_subfolder(self):
+        if self.is_external_course:
+            return True
+        else:
+            return self.active_url_slug.startswith('learn/')
+    
+    def add_subfolder_to_slug(self, current_slug):
+        if self.is_external_course:
+            return current_slug
+        else:
+            subjects = self.subjects.all()
+            if len(subjects) < 1:
+                logger.warning(f'Course does not have any subjects: {self.key}')
+                return current_slug
+            primary_subject_slug = subjects[0].slug
+            learn_slugs = SUBJECT_SLUG_TO_LEARN_PAGE_MAP.get(primary_subject_slug)
+            if learn_slugs is None:
+                logger.warning(f'Could not find learn slug for subject: {primary_subject_slug}')
+                return current_slug
+            learn_slug_en = learn_slugs['en']
+
+            organizations = self.authoring_organizations.all()
+            if len(organizations) < 1:
+                logger.warning(f'Course does not have any authoring organizations: {self.key}')
+                return current_slug
+            primary_organization_key = organizations[0].key.lower()
+
+            end_of_slug = current_slug.split('/')[-1]
+
+            return f'learn/{learn_slug_en}/{primary_organization_key}-{end_of_slug}'
 
 
 class CourseEditor(TimeStampedModel):
@@ -2198,8 +2237,7 @@ class CourseRun(DraftModelMixin, CachedMixin, TimeStampedModel):
         type_is_marketable = self.type.is_marketable
 
         if self.slug and type_is_marketable:
-            path = f'course/{self.slug}'
-            return urljoin(self.course.partner.marketing_site_url_root, path)
+            return self.course.marketing_url
 
         return None
 
@@ -3933,12 +3971,44 @@ class PersonAreaOfExpertise(AbstractValueModel):
         verbose_name_plural = 'Person Areas of Expertise'
 
 
+SLUG_DISALLOWED_CHARS = re.compile(r'[^-a-zA-Z0-9/]+')
+SLUG_ALLOWED_CHARS = re.compile(r'^[-a-zA-Z0-9_/]+\Z')
+validate_slug_with_slashes = RegexValidator(
+    SLUG_ALLOWED_CHARS,
+    # Translators: "letters" means latin letters: a-z and A-Z.
+    _("Enter a valid “slug” consisting of letters, numbers, underscores or hyphens."),
+    "invalid",
+)
+
+
+def slugify_with_slashes(text):
+    return uslugify(text, regex_pattern=SLUG_DISALLOWED_CHARS)
+
+
+class SlashSlugField(forms.SlugField):
+    default_validators = [validate_slug_with_slashes]
+
+
+class AutoSlugWithSlashesField(AutoSlugField):
+    default_validators = [validate_slug_with_slashes]
+
+    def formfield(self, **kwargs):
+        return super().formfield(
+            **{
+                "form_class": SlashSlugField,
+                "allow_unicode": self.allow_unicode,
+                **kwargs,
+            }
+        )
+
+
 class CourseUrlSlug(TimeStampedModel):
     course = models.ForeignKey(Course, models.CASCADE, related_name='url_slug_history')
     # need to have these on the model separately for unique_together to work, but it should always match course.partner
     partner = models.ForeignKey(Partner, models.CASCADE)
-    url_slug = AutoSlugField(populate_from='course__title', editable=True, slugify_function=uslugify,
-                             overwrite_on_add=False, max_length=255)
+    url_slug = AutoSlugWithSlashesField(populate_from='course__title', editable=True,
+                                        slugify_function=slugify_with_slashes, overwrite_on_add=False,
+                                        max_length=255)
     is_active = models.BooleanField(default=False)
 
     # useful if a course editor decides to edit a draft and provide a url_slug that has already been associated

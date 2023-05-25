@@ -134,3 +134,132 @@ SNOWFLAKE_REFRESH_COURSE_REVIEWS_QUERY = '''
     from
         prod.enterprise.course_reviews
 '''
+
+
+# source: https://github.com/edx/prospectus/blob/c534f89d6f46a63a5f6c2f8f00116803172549f7/src/utils/topics.js#L214
+SUBJECT_SLUG_TO_LEARN_PAGE_MAP = {
+    'architecture': {
+        'en': 'architecture',
+        'es': 'arquitectura',
+    },
+    'art-culture': {
+        'en': 'art',
+        'es': 'arte',
+    },
+    'biology-life-sciences': {
+        'en': 'biology',
+        'es': 'biologia',
+    },
+    'business-management': {
+        'en': 'business-administration',
+        'es': 'administracion-de-empresas',
+    },
+    'chemistry': {
+        'en': 'chemistry',
+        'es': 'quimica',
+    },
+    'communication': {
+        'en': 'business-communications',
+        'es': 'comunicacion',
+    },
+    'computer-science': {
+        'en': 'computer-programming',
+        'es': 'programacion-informatica',
+    },
+    'data-science': {
+        'en': 'data-analysis',
+        'es': 'analisis-de-datos',
+    },
+    'design': {
+        'en': 'design',
+        'es': 'diseno',
+    },
+    'economics-finance': {
+        'en': 'economics',
+        'es': 'economia',
+    },
+    'education-teacher-training': {
+        'en': 'education',
+        'es': 'educacion',
+    },
+    'electronics': {
+        'en': 'electronics',
+        'es': 'ingenieria-electrica',
+    },
+    'energy-earth-sciences': {
+        'en': 'energy',
+        'es': 'energia',
+    },
+    'engineering': {
+        'en': 'engineering',
+        'es': 'ingenieria',
+    },
+    'environmental-studies': {
+        'en': 'environmental-science',
+        'es': 'medio-ambiente',
+    },
+    'ethics': {
+        'en': 'ethics',
+        'es': 'desafios-eticos',
+    },
+    'food-nutrition': {
+        'en': 'nutrition',
+        'es': 'nutricion',
+    },
+    'health-safety': {
+        'en': 'healthcare',
+        'es': 'cuidado-de-la-salud',
+    },
+    'history': {
+        'en': 'history',
+        'es': 'historia',
+    },
+    'humanities': {
+        'en': 'humanities',
+        'es': 'humanidades',
+    },
+    'language': {
+        'en': 'language',
+        'es': 'idiomas',
+    },
+    'law': {
+        'en': 'law', 'es':
+        'leyes',
+    },
+    'literature': {
+        'en': 'literature',
+        'es': 'literatura',
+    },
+    'math': {
+        'en': 'math',
+        'es': 'matematicas',
+    },
+    'medicine': {
+        'en': 'medicine',
+        'es': 'medicina',
+    },
+    'music': {
+        'en': 'music-arts',
+        'es': 'musica',
+    },
+    'philanthropy': {
+        'en': 'humanities',
+        'es': 'humanidades',
+    },
+    'philosophy-ethics': {
+        'en': 'ethics',
+        'es': 'filosofia',
+    },
+    'physics': {
+        'en': 'physics',
+        'es': 'fisica',
+    },
+    'science': {
+        'en': 'science',
+        'es': 'ciencias-naturales',
+    },
+    'social-sciences': {
+        'en': 'social-science',
+        'es': 'ciencias-sociales',
+    },
+}
