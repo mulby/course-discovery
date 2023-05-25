@@ -44,7 +44,7 @@ from course_discovery.apps.course_metadata.choices import (
     CertificateType, CourseLength, CourseRunPacing, CourseRunStatus, ExternalCourseMarketingType, ExternalProductStatus,
     PayeeType, ProgramStatus, ReportingType
 )
-from course_discovery.apps.course_metadata.constants import PathwayType, SUBJECT_SLUG_TO_LEARN_PAGE_MAP
+from course_discovery.apps.course_metadata.constants import PathwayType
 from course_discovery.apps.course_metadata.fields import HtmlField, NullHtmlField
 from course_discovery.apps.course_metadata.managers import DraftManager
 from course_discovery.apps.course_metadata.model_utils import has_model_changed
@@ -1769,6 +1769,7 @@ class Course(DraftModelMixin, PkSearchableMixin, CachedMixin, TimeStampedModel):
 
     @property
     def active_url_slug_has_subfolder(self):
+        type_slug = self.type.slug
         if type_slug == CourseType.EXECUTIVE_EDUCATION_2U:
             return self.active_url_slug.startswith('executive-education/')
         elif type_slug == CourseType.BOOTCAMP_2U:
